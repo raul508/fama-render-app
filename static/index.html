@@ -238,6 +238,12 @@
       <p class="hint">Si lo dejas vacío, se usa un ambiente moderno y luminoso por defecto.</p>
     </div>
 
+    <div class="field">
+      <label for="plano">Plano del salón, con medidas (opcional)</label>
+      <input id="plano" type="file" accept="image/*">
+      <p class="hint">Si lo adjuntas, Gemini lo usa como referencia de proporciones y ubicación de puertas/ventanas.</p>
+    </div>
+
     <button id="btn" onclick="generar()">Generar imagen</button>
 
     <div id="estado"></div>
@@ -263,6 +269,7 @@ function descargarImagen() {
 async function generar() {
   const url = document.getElementById('url').value.trim();
   const promptSalon = document.getElementById('prompt').value.trim();
+  const planoFile = document.getElementById('plano').files[0];
   const btn = document.getElementById('btn');
   const estado = document.getElementById('estado');
   const resultado = document.getElementById('resultado');
@@ -279,10 +286,14 @@ async function generar() {
   resultado.innerHTML = '';
 
   try {
+    const formData = new FormData();
+    formData.append('url', url);
+    if (promptSalon) formData.append('prompt', promptSalon);
+    if (planoFile) formData.append('plano', planoFile);
+
     const resp = await fetch('/generar', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url, prompt: promptSalon || undefined })
+      body: formData
     });
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.detail || 'Error desconocido');
