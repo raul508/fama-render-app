@@ -2,7 +2,7 @@ import base64
 import io
 import os
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Form, UploadFile, File
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -26,17 +26,18 @@ PROMPT_BASE = (
 
 ESCENA_DEFECTO = "un salón moderno y luminoso, con iluminación natural y decoración minimalista"
 
-PROMPT = PROMPT_BASE.format(escena=ESCENA_DEFECTO)
+INSTRUCCION_PLANO = (
+    " Usa la imagen adicional del plano del salón como referencia de proporciones, "
+    "medidas, y ubicación de puertas y ventanas: respeta esa distribución al componer la escena."
+)
 
 
-def construir_prompt(descripcion_usuario: str | None) -> str:
+def construir_prompt(descripcion_usuario: str | None, hay_plano: bool) -> str:
     escena = descripcion_usuario.strip() if descripcion_usuario and descripcion_usuario.strip() else ESCENA_DEFECTO
-    return PROMPT_BASE.format(escena=escena)
-
-
-class GenerarRequest(BaseModel):
-    url: str
-    prompt: str | None = None
+    prompt = PROMPT_BASE.format(escena=escena)
+    if hay_plano:
+        prompt += INSTRUCCION_PLANO
+    return prompt
 
 
 async def capturar_imagen_producto(url: str) -> bytes:
@@ -71,12 +72,15 @@ async def capturar_imagen_producto(url: str) -> bytes:
         return screenshot_bytes
 
 
-def generar_imagen_salon(imagen_bytes: bytes, prompt: str) -> bytes:
+def generar_imagen_salon(imagen_bytes: bytes, prompt: str, plano_bytes: bytes | None = None) -> bytes:
     imagen_sofa = Image.open(io.BytesIO(imagen_bytes))
+    contenido = [imagen_sofa, prompt]
+    if plano_bytes:
+        contenido.insert(1, Image.open(io.BytesIO(plano_bytes)))
 
     response = client.models.generate_content(
         model="gemini-3.1-flash-image-preview",
-        contents=[imagen_sofa, prompt],
+        contents=contenido,
     )
 
     for part in response.candidates[0].content.parts:
@@ -87,10 +91,17 @@ def generar_imagen_salon(imagen_bytes: bytes, prompt: str) -> bytes:
 
 
 @app.post("/generar")
-async def generar(req: GenerarRequest):
+async def generar(
+    url: str = Form(...),
+    prompt: str | None = Form(None),
+    plano: UploadFile | None = File(None),
+):
     try:
-        producto_bytes = await capturar_imagen_producto(req.url)
-        resultado_bytes = generar_imagen_salon(producto_bytes, construir_prompt(req.prompt))
+        producto_bytes = await capturar_imagen_producto(url)
+        plano_bytes = await plano.read() if plano is not None and plano.filename else None
+        resultado_bytes = generar_imagen_salon(
+            producto_bytes, construir_prompt(prompt, hay_plano=plano_bytes is not None), plano_bytes
+        )
         return JSONResponse({
             "imagen_base64": base64.b64encode(resultado_bytes).decode("utf-8"),
             "recorte_original_base64": base64.b64encode(producto_bytes).decode("utf-8"),
