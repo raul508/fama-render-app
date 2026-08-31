@@ -18,12 +18,20 @@ if not GEMINI_API_KEY:
 
 client = genai.Client(api_key=GEMINI_API_KEY)
 
-PROMPT = (
+PROMPT_BASE = (
     "Integra este sofá exactamente como aparece en la imagen "
-    "(mismo color, forma y cojines) dentro de un salón moderno y luminoso, "
-    "con iluminación natural, decoración minimalista y una perspectiva realista, "
-    "como si fuera una foto de catálogo de interiorismo."
+    "(mismo color, forma y cojines) dentro de {escena}, "
+    "con una perspectiva realista, como si fuera una foto de catálogo de interiorismo."
 )
+
+ESCENA_DEFECTO = "un salón moderno y luminoso, con iluminación natural y decoración minimalista"
+
+PROMPT = PROMPT_BASE.format(escena=ESCENA_DEFECTO)
+
+
+def construir_prompt(descripcion_usuario: str | None) -> str:
+    escena = descripcion_usuario.strip() if descripcion_usuario and descripcion_usuario.strip() else ESCENA_DEFECTO
+    return PROMPT_BASE.format(escena=escena)
 
 
 class GenerarRequest(BaseModel):
@@ -82,7 +90,7 @@ def generar_imagen_salon(imagen_bytes: bytes, prompt: str) -> bytes:
 async def generar(req: GenerarRequest):
     try:
         producto_bytes = await capturar_imagen_producto(req.url)
-        resultado_bytes = generar_imagen_salon(producto_bytes, req.prompt or PROMPT)
+        resultado_bytes = generar_imagen_salon(producto_bytes, construir_prompt(req.prompt))
         return JSONResponse({
             "imagen_base64": base64.b64encode(resultado_bytes).decode("utf-8"),
             "recorte_original_base64": base64.b64encode(producto_bytes).decode("utf-8"),
