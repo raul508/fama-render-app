@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Fama · Sofá en salón (IA)</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 60px auto; padding: 0 20px; color: #1a1a2e; }
+  h1 { font-size: 1.4rem; }
+  input { width: 100%; padding: 10px; font-size: 1rem; box-sizing: border-box; margin-top: 8px; }
+  button { margin-top: 14px; padding: 10px 20px; font-size: 1rem; background: #1a3d6d; color: white; border: none; border-radius: 6px; cursor: pointer; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  #resultado { margin-top: 30px; }
+  img { max-width: 100%; border-radius: 8px; margin-top: 10px; }
+  #estado { margin-top: 12px; color: #555; }
+</style>
+</head>
+<body>
+  <h1>Generar sofá integrado en un salón</h1>
+  <label for="url">URL del presupuesto</label>
+  <input id="url" type="text" placeholder="https://famav4.sim3d.es/#/order/...">
+  <button id="btn" onclick="generar()">Generar imagen</button>
+  <div id="estado"></div>
+  <div id="resultado"></div>
+
+<script>
+async function generar() {
+  const url = document.getElementById('url').value.trim();
+  const btn = document.getElementById('btn');
+  const estado = document.getElementById('estado');
+  const resultado = document.getElementById('resultado');
+  if (!url) { estado.textContent = 'Pega una URL primero.'; return; }
+
+  btn.disabled = true;
+  estado.textContent = 'Capturando y generando... (puede tardar 15-30s)';
+  resultado.innerHTML = '';
+
+  try {
+    const resp = await fetch('/generar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || 'Error desconocido');
+
+    estado.textContent = 'Listo.';
+    resultado.innerHTML = `<img src="data:image/png;base64,${data.imagen_base64}">`;
+  } catch (e) {
+    estado.textContent = 'Error: ' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
