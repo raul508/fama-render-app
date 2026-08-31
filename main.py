@@ -2,8 +2,11 @@ import base64
 import io
 import os
 
-from fastapi import FastAPI, HTTPException, Form, UploadFile, File
+import secrets
+
+from fastapi import FastAPI, HTTPException, Form, UploadFile, File, Depends
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from playwright.async_api import async_playwright
@@ -17,6 +20,34 @@ if not GEMINI_API_KEY:
     raise RuntimeError("Falta la variable de entorno GEMINI_API_KEY")
 
 client = genai.Client(api_key=GEMINI_API_KEY)
+
+APP_USER = os.environ.get("APP_USER")
+APP_PASSWORD = os.environ.get("APP_PASSWORD")
+
+security = HTTPBasic()
+
+
+@app.middleware("http")
+async def proteger_con_password(request, call_next):
+    if not APP_USER or not APP_PASSWORD:
+        # Si no se configuraron las variables, la app queda sin contraseña
+        return await call_next(request)
+
+    auth = request.headers.get("Authorization")
+    if auth and auth.startswith("Basic "):
+        import base64 as b64
+        try:
+            usuario, clave = b64.b64decode(auth[6:]).decode().split(":", 1)
+        except Exception:
+            usuario, clave = "", ""
+        if secrets.compare_digest(usuario, APP_USER) and secrets.compare_digest(clave, APP_PASSWORD):
+            return await call_next(request)
+
+    return JSONResponse(
+        {"detail": "No autorizado"},
+        status_code=401,
+        headers={"WWW-Authenticate": "Basic"},
+    )
 
 PROMPT_BASE = (
     "Integra este sofá exactamente como aparece en la imagen "
