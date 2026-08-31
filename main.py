@@ -67,7 +67,7 @@ def generar_imagen_salon(imagen_bytes: bytes, prompt: str) -> bytes:
     imagen_sofa = Image.open(io.BytesIO(imagen_bytes))
 
     response = client.models.generate_content(
-        model="gemini-2.5-flash-image",
+        model="gemini-3.1-flash-image-preview",
         contents=[imagen_sofa, prompt],
     )
 
