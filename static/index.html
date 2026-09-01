@@ -30,14 +30,44 @@
 
   header {
     padding: 40px 24px 20px;
-    text-align: left;
     max-width: 620px;
     margin: 0 auto;
   }
 
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
   .logo {
-    height: 76px;
+    height: 96px;
     display: block;
+  }
+
+  .lang-switch {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+  }
+
+  .lang-switch button {
+    margin: 0;
+    padding: 9px 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    cursor: pointer;
+  }
+
+  .lang-switch button.activo {
+    background: var(--teal);
+    color: #fff;
+    border-color: var(--teal);
   }
 
   .tagline {
@@ -220,46 +250,181 @@
 <body>
 
 <header>
-  <img class="logo" src="/assets/logo-fama.png" alt="Fama">
-  <p class="tagline">Pega el enlace de un presupuesto y genera una imagen del sofá integrado en un salón real.</p>
+  <div class="header-top">
+    <img class="logo" src="/assets/logo-fama.png" alt="Fama">
+    <div class="lang-switch" id="lang-switch">
+      <button type="button" data-lang="es">ES</button>
+      <button type="button" data-lang="en">EN</button>
+      <button type="button" data-lang="fr">FR</button>
+      <button type="button" data-lang="de">DE</button>
+    </div>
+  </div>
+  <p class="tagline" data-i18n="tagline"></p>
 </header>
 
 <main>
   <div class="card">
-    <h1>Generar salón con IA</h1>
-    <p class="subtitle">Toma la imagen del producto directamente del presupuesto y la compone en una escena de interiorismo.</p>
+    <h1 data-i18n="titulo"></h1>
+    <p class="subtitle" data-i18n="subtitulo"></p>
 
-    <label for="url">URL del presupuesto</label>
+    <label for="url" data-i18n="label_url"></label>
     <input id="url" type="text" placeholder="https://famav4.sim3d.es/#/order/...">
 
     <div class="field">
-      <label for="prompt">Cómo quieres el salón (opcional)</label>
-      <textarea id="prompt" placeholder="Ej: salón moderno con grandes ventanales, tonos cálidos, suelo de madera clara y luz de atardecer..."></textarea>
-      <p class="hint">Si lo dejas vacío, se usa un ambiente moderno y luminoso por defecto.</p>
+      <label for="prompt" data-i18n="label_prompt"></label>
+      <textarea id="prompt" data-i18n-placeholder="placeholder_prompt"></textarea>
+      <p class="hint" data-i18n="hint_prompt"></p>
     </div>
 
     <div class="field">
-      <label for="foto">Foto real del salón (opcional)</label>
+      <label for="foto" data-i18n="label_foto"></label>
       <input id="foto" type="file" accept="image/*">
-      <p class="hint">Si la adjuntas, el sofá se integra directamente en ese salón real (misma perspectiva, luz y mobiliario).</p>
+      <p class="hint" data-i18n="hint_foto"></p>
     </div>
 
     <div class="field">
-      <label for="plano">Plano del salón, con medidas (opcional)</label>
+      <label for="plano" data-i18n="label_plano"></label>
       <input id="plano" type="file" accept="image/*">
-      <p class="hint">Si lo adjuntas, Gemini lo usa como referencia de proporciones y ubicación de puertas/ventanas.</p>
+      <p class="hint" data-i18n="hint_plano"></p>
     </div>
 
-    <button id="btn" onclick="generar()">Generar imagen</button>
+    <button id="btn" onclick="generar()" data-i18n="boton_generar"></button>
 
     <div id="estado"></div>
     <div id="resultado"></div>
   </div>
 </main>
 
-<footer>Fama Sofás · herramienta interna</footer>
+<footer data-i18n="footer"></footer>
 
 <script>
+const TRADUCCIONES = {
+  es: {
+    tagline: "Pega el enlace de un presupuesto y genera una imagen del sofá integrado en un salón real.",
+    titulo: "Generar salón con IA",
+    subtitulo: "Toma la imagen del producto directamente del presupuesto y la compone en una escena de interiorismo.",
+    label_url: "URL del presupuesto",
+    label_prompt: "Cómo quieres el salón (opcional)",
+    placeholder_prompt: "Ej: salón moderno con grandes ventanales, tonos cálidos, suelo de madera clara y luz de atardecer...",
+    hint_prompt: "Si lo dejas vacío, se usa un ambiente moderno y luminoso por defecto.",
+    label_foto: "Foto real del salón (opcional)",
+    hint_foto: "Si la adjuntas, el sofá se integra directamente en ese salón real (misma perspectiva, luz y mobiliario).",
+    label_plano: "Plano del salón, con medidas (opcional)",
+    hint_plano: "Si lo adjuntas, Gemini lo usa como referencia de proporciones y ubicación de puertas/ventanas.",
+    boton_generar: "Generar imagen",
+    boton_descargar: "Descargar imagen",
+    footer: "Fama Sofás · herramienta interna",
+    error_sin_url: "Pega una URL de presupuesto primero.",
+    generando: "Capturando el producto y generando la imagen (15-30s)...",
+    listo: "Imagen generada.",
+    error_desconocido: "Error desconocido",
+    error_prefijo: "Error: "
+  },
+  en: {
+    tagline: "Paste a quote link and generate an image of the sofa placed in a real living room.",
+    titulo: "Generate living room with AI",
+    subtitulo: "Takes the product image directly from the quote and composes it into an interior design scene.",
+    label_url: "Quote URL",
+    label_prompt: "How you want the living room (optional)",
+    placeholder_prompt: "E.g.: modern living room with large windows, warm tones, light wood floor and sunset light...",
+    hint_prompt: "If left empty, a modern and bright setting is used by default.",
+    label_foto: "Real photo of the living room (optional)",
+    hint_foto: "If attached, the sofa is placed directly into that real room (same perspective, light and furniture).",
+    label_plano: "Floor plan with measurements (optional)",
+    hint_plano: "If attached, Gemini uses it as a reference for proportions and door/window placement.",
+    boton_generar: "Generate image",
+    boton_descargar: "Download image",
+    footer: "Fama Sofás · internal tool",
+    error_sin_url: "Paste a quote URL first.",
+    generando: "Capturing the product and generating the image (15-30s)...",
+    listo: "Image generated.",
+    error_desconocido: "Unknown error",
+    error_prefijo: "Error: "
+  },
+  fr: {
+    tagline: "Collez le lien d'un devis et générez une image du canapé intégré dans un vrai salon.",
+    titulo: "Générer un salon avec l'IA",
+    subtitulo: "Récupère l'image du produit directement depuis le devis et la compose dans une scène de décoration intérieure.",
+    label_url: "URL du devis",
+    label_prompt: "Comment voulez-vous le salon (facultatif)",
+    placeholder_prompt: "Ex : salon moderne avec grandes fenêtres, tons chauds, parquet clair et lumière de coucher de soleil...",
+    hint_prompt: "Si laissé vide, une ambiance moderne et lumineuse est utilisée par défaut.",
+    label_foto: "Photo réelle du salon (facultatif)",
+    hint_foto: "Si elle est jointe, le canapé est intégré directement dans ce salon réel (même perspective, lumière et mobilier).",
+    label_plano: "Plan du salon, avec mesures (facultatif)",
+    hint_plano: "S'il est joint, Gemini l'utilise comme référence pour les proportions et l'emplacement des portes/fenêtres.",
+    boton_generar: "Générer l'image",
+    boton_descargar: "Télécharger l'image",
+    footer: "Fama Sofás · outil interne",
+    error_sin_url: "Collez d'abord une URL de devis.",
+    generando: "Capture du produit et génération de l'image (15-30s)...",
+    listo: "Image générée.",
+    error_desconocido: "Erreur inconnue",
+    error_prefijo: "Erreur : "
+  },
+  de: {
+    tagline: "Fügen Sie den Link eines Angebots ein und erstellen Sie ein Bild des Sofas in einem echten Wohnzimmer.",
+    titulo: "Wohnzimmer mit KI generieren",
+    subtitulo: "Nimmt das Produktbild direkt aus dem Angebot und setzt es in eine Interior-Design-Szene ein.",
+    label_url: "Angebots-URL",
+    label_prompt: "Wie soll das Wohnzimmer aussehen (optional)",
+    placeholder_prompt: "Z. B.: modernes Wohnzimmer mit großen Fenstern, warmen Tönen, hellem Holzboden und Abendlicht...",
+    hint_prompt: "Wenn leer gelassen, wird standardmäßig eine moderne, helle Umgebung verwendet.",
+    label_foto: "Echtes Foto des Wohnzimmers (optional)",
+    hint_foto: "Falls beigefügt, wird das Sofa direkt in dieses echte Wohnzimmer eingefügt (gleiche Perspektive, Licht und Möbel).",
+    label_plano: "Grundriss des Wohnzimmers mit Maßen (optional)",
+    hint_plano: "Falls beigefügt, nutzt Gemini ihn als Referenz für Proportionen sowie Tür- und Fensterposition.",
+    boton_generar: "Bild generieren",
+    boton_descargar: "Bild herunterladen",
+    footer: "Fama Sofás · internes Werkzeug",
+    error_sin_url: "Bitte zuerst eine Angebots-URL einfügen.",
+    generando: "Produkt wird erfasst und Bild generiert (15-30s)...",
+    listo: "Bild generiert.",
+    error_desconocido: "Unbekannter Fehler",
+    error_prefijo: "Fehler: "
+  }
+};
+
+function detectarIdiomaSistema() {
+  const idiomasSoportados = Object.keys(TRADUCCIONES);
+  const candidatos = navigator.languages && navigator.languages.length
+    ? navigator.languages
+    : [navigator.language || 'es'];
+
+  for (const c of candidatos) {
+    const base = c.slice(0, 2).toLowerCase();
+    if (idiomasSoportados.includes(base)) return base;
+  }
+  return 'es';
+}
+
+let idiomaActual = localStorage.getItem('fama_idioma') || detectarIdiomaSistema();
+
+function aplicarIdioma(lang) {
+  idiomaActual = lang;
+  localStorage.setItem('fama_idioma', lang);
+  document.documentElement.lang = lang;
+
+  const t = TRADUCCIONES[lang];
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key]) el.textContent = t[key];
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (t[key]) el.placeholder = t[key];
+  });
+  document.querySelectorAll('#lang-switch button').forEach(btn => {
+    btn.classList.toggle('activo', btn.dataset.lang === lang);
+  });
+}
+
+document.querySelectorAll('#lang-switch button').forEach(btn => {
+  btn.addEventListener('click', () => aplicarIdioma(btn.dataset.lang));
+});
+
+aplicarIdioma(idiomaActual);
+
 let ultimaImagenBase64 = null;
 
 function descargarImagen() {
@@ -273,6 +438,7 @@ function descargarImagen() {
 }
 
 async function generar() {
+  const t = TRADUCCIONES[idiomaActual];
   const url = document.getElementById('url').value.trim();
   const promptSalon = document.getElementById('prompt').value.trim();
   const planoFile = document.getElementById('plano').files[0];
@@ -282,14 +448,14 @@ async function generar() {
   const resultado = document.getElementById('resultado');
 
   if (!url) {
-    estado.textContent = 'Pega una URL de presupuesto primero.';
+    estado.textContent = t.error_sin_url;
     estado.className = 'error';
     return;
   }
 
   btn.disabled = true;
   estado.className = '';
-  estado.innerHTML = '<span class="spinner"></span>Capturando el producto y generando la imagen (15-30s)...';
+  estado.innerHTML = '<span class="spinner"></span>' + t.generando;
   resultado.innerHTML = '';
 
   try {
@@ -304,14 +470,14 @@ async function generar() {
       body: formData
     });
     const data = await resp.json();
-    if (!resp.ok) throw new Error(data.detail || 'Error desconocido');
+    if (!resp.ok) throw new Error(data.detail || t.error_desconocido);
 
-    estado.textContent = 'Imagen generada.';
+    estado.textContent = t.listo;
     ultimaImagenBase64 = data.imagen_base64;
     resultado.innerHTML = `<img class="resultado-img" src="data:image/png;base64,${data.imagen_base64}">
-      <button type="button" class="btn-secondary" onclick="descargarImagen()" style="margin-top:14px; margin-left:0;">Descargar imagen</button>`;
+      <button type="button" class="btn-secondary" onclick="descargarImagen()" style="margin-top:14px; margin-left:0;">${t.boton_descargar}</button>`;
   } catch (e) {
-    estado.textContent = 'Error: ' + e.message;
+    estado.textContent = t.error_prefijo + e.message;
     estado.className = 'error';
   } finally {
     btn.disabled = false;
