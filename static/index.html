@@ -239,6 +239,12 @@
     </div>
 
     <div class="field">
+      <label for="foto">Foto real del salón (opcional)</label>
+      <input id="foto" type="file" accept="image/*">
+      <p class="hint">Si la adjuntas, el sofá se integra directamente en ese salón real (misma perspectiva, luz y mobiliario).</p>
+    </div>
+
+    <div class="field">
       <label for="plano">Plano del salón, con medidas (opcional)</label>
       <input id="plano" type="file" accept="image/*">
       <p class="hint">Si lo adjuntas, Gemini lo usa como referencia de proporciones y ubicación de puertas/ventanas.</p>
@@ -270,6 +276,7 @@ async function generar() {
   const url = document.getElementById('url').value.trim();
   const promptSalon = document.getElementById('prompt').value.trim();
   const planoFile = document.getElementById('plano').files[0];
+  const fotoFile = document.getElementById('foto').files[0];
   const btn = document.getElementById('btn');
   const estado = document.getElementById('estado');
   const resultado = document.getElementById('resultado');
@@ -290,6 +297,7 @@ async function generar() {
     formData.append('url', url);
     if (promptSalon) formData.append('prompt', promptSalon);
     if (planoFile) formData.append('plano', planoFile);
+    if (fotoFile) formData.append('foto_salon', fotoFile);
 
     const resp = await fetch('/generar', {
       method: 'POST',
