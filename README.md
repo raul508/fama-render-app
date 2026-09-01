@@ -13,7 +13,14 @@
 2. En Render: **New > Web Service** → conecta el repo → Render detecta el `Dockerfile` solo.
 3. En **Environment**, añade la variable:
    - `GEMINI_API_KEY` = tu clave de https://aistudio.google.com/apikey
-4. Deploy. Render te da una URL pública (`https://tu-app.onrender.com`).
+4. (Opcional) Para proteger la web con usuario/contraseña, añade también:
+   - `APP_USER` = el usuario que quieras (ej. `fama`)
+   - `APP_PASSWORD` = la contraseña que quieras
+   Si no añades estas dos, la web queda abierta sin login. Para cambiar la
+   contraseña más adelante, solo edita `APP_PASSWORD` en esta misma sección
+   de Render — no hace falta tocar código ni volver a desplegar manualmente,
+   Render reinicia el servicio solo al guardar la variable.
+5. Deploy. Render te da una URL pública (`https://tu-app.onrender.com`).
 
 ## Probar en local
 ```bash
