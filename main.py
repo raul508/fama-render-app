@@ -1,8 +1,8 @@
 import base64
 import io
 import os
-
 import secrets
+from urllib.parse import urlparse
 
 from fastapi import FastAPI, HTTPException, Form, UploadFile, File, Depends
 from fastapi.responses import FileResponse, JSONResponse
@@ -78,6 +78,20 @@ def construir_prompt(descripcion_usuario: str | None, hay_plano: bool, hay_foto:
     return prompt
 
 
+DOMINIOS_PERMITIDOS = {"famav4.sim3d.es"}
+
+
+def validar_url_fama(url: str) -> None:
+    try:
+        host = urlparse(url).hostname or ""
+    except Exception:
+        host = ""
+    if host.lower() not in DOMINIOS_PERMITIDOS:
+        raise ValueError(
+            f"Solo se permiten URLs de Fama ({', '.join(DOMINIOS_PERMITIDOS)}). Recibido: {host or url}"
+        )
+
+
 async def capturar_imagen_producto(url: str) -> bytes:
     """Abre la URL del presupuesto y recorta la imagen/canvas más grande de la página."""
     async with async_playwright() as p:
@@ -137,6 +151,7 @@ async def generar(
     foto_salon: UploadFile | None = File(None),
 ):
     try:
+        validar_url_fama(url)
         producto_bytes = await capturar_imagen_producto(url)
         plano_bytes = await plano.read() if plano is not None and plano.filename else None
         foto_bytes = await foto_salon.read() if foto_salon is not None and foto_salon.filename else None
@@ -151,6 +166,8 @@ async def generar(
             "imagen_base64": base64.b64encode(resultado_bytes).decode("utf-8"),
             "recorte_original_base64": base64.b64encode(producto_bytes).decode("utf-8"),
         })
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
