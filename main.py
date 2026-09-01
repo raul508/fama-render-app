@@ -62,10 +62,17 @@ INSTRUCCION_PLANO = (
     "medidas, y ubicación de puertas y ventanas: respeta esa distribución al componer la escena."
 )
 
+INSTRUCCION_FOTO = (
+    " Usa la fotografía adicional del salón real como base: coloca el sofá dentro de "
+    "ese mismo espacio, respetando su perspectiva, iluminación, suelo y mobiliario existente."
+)
 
-def construir_prompt(descripcion_usuario: str | None, hay_plano: bool) -> str:
+
+def construir_prompt(descripcion_usuario: str | None, hay_plano: bool, hay_foto: bool = False) -> str:
     escena = descripcion_usuario.strip() if descripcion_usuario and descripcion_usuario.strip() else ESCENA_DEFECTO
     prompt = PROMPT_BASE.format(escena=escena)
+    if hay_foto:
+        prompt += INSTRUCCION_FOTO
     if hay_plano:
         prompt += INSTRUCCION_PLANO
     return prompt
@@ -103,11 +110,12 @@ async def capturar_imagen_producto(url: str) -> bytes:
         return screenshot_bytes
 
 
-def generar_imagen_salon(imagen_bytes: bytes, prompt: str, plano_bytes: bytes | None = None) -> bytes:
+def generar_imagen_salon(imagen_bytes: bytes, prompt: str, extras_bytes: list[bytes] | None = None) -> bytes:
     imagen_sofa = Image.open(io.BytesIO(imagen_bytes))
-    contenido = [imagen_sofa, prompt]
-    if plano_bytes:
-        contenido.insert(1, Image.open(io.BytesIO(plano_bytes)))
+    contenido = [imagen_sofa]
+    for extra in (extras_bytes or []):
+        contenido.append(Image.open(io.BytesIO(extra)))
+    contenido.append(prompt)
 
     response = client.models.generate_content(
         model="gemini-3.1-flash-image-preview",
@@ -126,12 +134,18 @@ async def generar(
     url: str = Form(...),
     prompt: str | None = Form(None),
     plano: UploadFile | None = File(None),
+    foto_salon: UploadFile | None = File(None),
 ):
     try:
         producto_bytes = await capturar_imagen_producto(url)
         plano_bytes = await plano.read() if plano is not None and plano.filename else None
+        foto_bytes = await foto_salon.read() if foto_salon is not None and foto_salon.filename else None
+
+        extras = [b for b in (foto_bytes, plano_bytes) if b]
         resultado_bytes = generar_imagen_salon(
-            producto_bytes, construir_prompt(prompt, hay_plano=plano_bytes is not None), plano_bytes
+            producto_bytes,
+            construir_prompt(prompt, hay_plano=plano_bytes is not None, hay_foto=foto_bytes is not None),
+            extras,
         )
         return JSONResponse({
             "imagen_base64": base64.b64encode(resultado_bytes).decode("utf-8"),
