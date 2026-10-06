@@ -346,7 +346,7 @@
     <p class="subtitle" data-i18n="subtitulo"></p>
 
     <label for="url" data-i18n="label_url"></label>
-    <input id="url" type="text" placeholder="https://famav4.sim3d.es/#/order/...">
+    <input id="url" type="text" placeholder="https://famasofas.sim3d.es/#/order/...">
 
     <div class="field">
       <label for="prompt" data-i18n="label_prompt"></label>
@@ -393,7 +393,7 @@ const TRADUCCIONES = {
     boton_descargar: "Descargar imagen",
     footer: "Fama Sofás · herramienta interna",
     error_sin_url: "Pega una URL de presupuesto primero.",
-    error_url_invalida: "Solo se admiten URLs de presupuestos de Fama (famav4.sim3d.es).",
+    error_url_invalida: "Solo se admiten URLs de presupuestos de Fama (famav4.sim3d.es, famasofas.sim3d.es).",
     generando: "Capturando el producto y generando la imagen (15-30s)...",
     listo: "Imagen generada.",
     error_desconocido: "Error desconocido",
@@ -415,7 +415,7 @@ const TRADUCCIONES = {
     boton_descargar: "Download image",
     footer: "Fama Sofás · internal tool",
     error_sin_url: "Paste a quote URL first.",
-    error_url_invalida: "Only Fama quote URLs are accepted (famav4.sim3d.es).",
+    error_url_invalida: "Only Fama quote URLs are accepted (famav4.sim3d.es, famasofas.sim3d.es).",
     generando: "Capturing the product and generating the image (15-30s)...",
     listo: "Image generated.",
     error_desconocido: "Unknown error",
@@ -437,7 +437,7 @@ const TRADUCCIONES = {
     boton_descargar: "Télécharger l'image",
     footer: "Fama Sofás · outil interne",
     error_sin_url: "Collez d'abord une URL de devis.",
-    error_url_invalida: "Seules les URLs de devis Fama sont acceptées (famav4.sim3d.es).",
+    error_url_invalida: "Seules les URLs de devis Fama sont acceptées (famav4.sim3d.es, famasofas.sim3d.es).",
     generando: "Capture du produit et génération de l'image (15-30s)...",
     listo: "Image générée.",
     error_desconocido: "Erreur inconnue",
@@ -459,7 +459,7 @@ const TRADUCCIONES = {
     boton_descargar: "Bild herunterladen",
     footer: "Fama Sofás · internes Werkzeug",
     error_sin_url: "Bitte zuerst eine Angebots-URL einfügen.",
-    error_url_invalida: "Es werden nur Fama-Angebots-URLs akzeptiert (famav4.sim3d.es).",
+    error_url_invalida: "Es werden nur Fama-Angebots-URLs akzeptiert (famav4.sim3d.es, famasofas.sim3d.es).",
     generando: "Produkt wird erfasst und Bild generiert (15-30s)...",
     listo: "Bild generiert.",
     error_desconocido: "Unbekannter Fehler",
@@ -507,6 +507,8 @@ document.querySelectorAll('#lang-switch button').forEach(btn => {
 
 aplicarIdioma(idiomaActual);
 
+const DOMINIOS_PERMITIDOS = ['famav4.sim3d.es', 'famasofas.sim3d.es'];
+
 let ultimaImagenBase64 = null;
 
 function descargarImagen() {
@@ -537,7 +539,7 @@ async function generar() {
 
   try {
     const host = new URL(url).hostname;
-    if (host !== 'famav4.sim3d.es') {
+    if (!DOMINIOS_PERMITIDOS.includes(host)) {
       estado.textContent = t.error_url_invalida;
       estado.className = 'error';
       return;
