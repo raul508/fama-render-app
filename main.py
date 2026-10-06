@@ -78,7 +78,7 @@ def construir_prompt(descripcion_usuario: str | None, hay_plano: bool, hay_foto:
     return prompt
 
 
-DOMINIOS_PERMITIDOS = {"famav4.sim3d.es"}
+DOMINIOS_PERMITIDOS = {"famav4.sim3d.es", "famasofas.sim3d.es"}
 
 
 def validar_url_fama(url: str) -> None:
