@@ -53,6 +53,7 @@ PROMPT_BASE = (
     "Integra este sofá exactamente como aparece en la imagen "
     "(mismo color, forma y cojines) dentro de {escena}, "
     "con una perspectiva realista, como si fuera una foto de catálogo de interiorismo."
+    "No añadas ningún texto, rótulo, logotipo, nombre del sofá, precio ni cifra en la imagen, "
 )
 
 ESCENA_DEFECTO = "un salón moderno y luminoso, con iluminación natural y decoración minimalista"
