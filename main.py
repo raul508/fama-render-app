@@ -52,8 +52,10 @@ async def proteger_con_password(request, call_next):
 PROMPT_BASE = (
     "Integra este sofá exactamente como aparece en la imagen "
     "(mismo color, forma y cojines) dentro de {escena}, "
-    "con una perspectiva realista, como si fuera una foto de catálogo de interiorismo."
-    "No añadas ningún texto, rótulo, logotipo, nombre del sofá, precio ni cifra en la imagen, "
+    "con una perspectiva realista, como una fotografía real de un salón. "
+    "La imagen final debe ser únicamente la fotografía: sin texto, sin letras, sin números, "
+    "sin precios, sin nombres del sofá o del modelo, sin etiquetas, sin carteles, sin logotipos, "
+    "sin marcas de agua y sin ningún elemento gráfico superpuesto."
 )
 
 ESCENA_DEFECTO = "un salón moderno y luminoso, con iluminación natural y decoración minimalista"
@@ -93,12 +95,23 @@ def validar_url_fama(url: str) -> None:
         )
 
 
+class NoPresupuestoError(Exception):
+    """La URL no se pudo capturar: no corresponde a un presupuesto o pedido válido."""
+
+
 async def capturar_imagen_producto(url: str) -> bytes:
+    try:
+        return await _capturar_imagen_producto(url)
+    except Exception as e:
+        raise NoPresupuestoError(str(e))
+
+
+async def _capturar_imagen_producto(url: str) -> bytes:
     """Abre la URL del presupuesto y recorta la imagen/canvas más grande de la página."""
     async with async_playwright() as p:
         browser = await p.chromium.launch()
         page = await browser.new_page(viewport={"width": 1600, "height": 1200})
-        await page.goto(url, wait_until="networkidle", timeout=30000)
+        await page.goto(url, wait_until="networkidle", timeout=60000)
         # Dar tiempo a que el visor 3D/imagen termine de renderizar
         await page.wait_for_timeout(2500)
 
@@ -120,8 +133,19 @@ async def capturar_imagen_producto(url: str) -> bytes:
         mejor = max(candidatos, key=lambda c: c["area"])
         clip = {"x": mejor["x"], "y": mejor["y"], "width": mejor["w"], "height": mejor["h"]}
 
-        screenshot_bytes = await page.screenshot(clip=clip)
+        # La captura de un render 3D puede tardar: se da más margen y se reintenta una vez.
+        screenshot_bytes = None
+        ultimo_error = None
+        for intento in range(2):
+            try:
+                screenshot_bytes = await page.screenshot(clip=clip, timeout=60000)
+                break
+            except Exception as e:
+                ultimo_error = e
+                await page.wait_for_timeout(3000)
         await browser.close()
+        if screenshot_bytes is None:
+            raise ultimo_error
         return screenshot_bytes
 
 
@@ -167,6 +191,8 @@ async def generar(
             "imagen_base64": base64.b64encode(resultado_bytes).decode("utf-8"),
             "recorte_original_base64": base64.b64encode(producto_bytes).decode("utf-8"),
         })
+    except NoPresupuestoError:
+        raise HTTPException(status_code=422, detail="NO_PRESUPUESTO")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
