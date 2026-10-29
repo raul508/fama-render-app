@@ -397,7 +397,8 @@ const TRADUCCIONES = {
     generando: "Capturando el producto y generando la imagen (15-30s)...",
     listo: "Imagen generada.",
     error_desconocido: "Error desconocido",
-    error_prefijo: "Error: "
+    error_prefijo: "Error: ",
+    error_no_presupuesto: "Esta URL no corresponde con ningún presupuesto ni pedido. Comprueba que has copiado la URL correcta."
   },
   en: {
     tagline: "Paste a quote link and generate an image of the sofa placed in a real living room.",
@@ -419,7 +420,8 @@ const TRADUCCIONES = {
     generando: "Capturing the product and generating the image (15-30s)...",
     listo: "Image generated.",
     error_desconocido: "Unknown error",
-    error_prefijo: "Error: "
+    error_prefijo: "Error: ",
+    error_no_presupuesto: "This URL does not correspond to any quote or order. Please check that you copied the right URL."
   },
   fr: {
     tagline: "Collez le lien d'un devis et générez une image du canapé intégré dans un vrai salon.",
@@ -441,7 +443,8 @@ const TRADUCCIONES = {
     generando: "Capture du produit et génération de l'image (15-30s)...",
     listo: "Image générée.",
     error_desconocido: "Erreur inconnue",
-    error_prefijo: "Erreur : "
+    error_prefijo: "Erreur : ",
+    error_no_presupuesto: "Cette URL ne correspond à aucun devis ni à aucune commande. Vérifiez que vous avez copié la bonne URL."
   },
   de: {
     tagline: "Fügen Sie den Link eines Angebots ein und erstellen Sie ein Bild des Sofas in einem echten Wohnzimmer.",
@@ -463,7 +466,8 @@ const TRADUCCIONES = {
     generando: "Produkt wird erfasst und Bild generiert (15-30s)...",
     listo: "Bild generiert.",
     error_desconocido: "Unbekannter Fehler",
-    error_prefijo: "Fehler: "
+    error_prefijo: "Fehler: ",
+    error_no_presupuesto: "Diese URL entspricht keinem Angebot und keiner Bestellung. Bitte prüfen Sie, ob Sie die richtige URL kopiert haben."
   }
 };
 
@@ -574,7 +578,7 @@ async function generar() {
     resultado.innerHTML = `<img class="resultado-img" src="data:image/png;base64,${data.imagen_base64}">
       <button type="button" class="btn-secondary" onclick="descargarImagen()" style="margin-top:14px; margin-left:0;">${t.boton_descargar}</button>`;
   } catch (e) {
-    estado.textContent = t.error_prefijo + e.message;
+    estado.textContent = (e.message === 'NO_PRESUPUESTO') ? t.error_no_presupuesto : t.error_prefijo + e.message;
     estado.className = 'error';
   } finally {
     btn.disabled = false;
