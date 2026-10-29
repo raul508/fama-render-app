@@ -542,9 +542,14 @@ async function generar() {
   }
 
   try {
-    const host = new URL(url).hostname;
-    if (!DOMINIOS_PERMITIDOS.includes(host)) {
+    const u = new URL(url);
+    if (!DOMINIOS_PERMITIDOS.includes(u.hostname)) {
       estado.textContent = t.error_url_invalida;
+      estado.className = 'error';
+      return;
+    }
+    if (!/^#\/order\/.+/.test(u.hash)) {
+      estado.textContent = t.error_no_presupuesto;
       estado.className = 'error';
       return;
     }
