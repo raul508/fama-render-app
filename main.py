@@ -93,6 +93,10 @@ def validar_url_fama(url: str) -> None:
         raise ValueError(
             f"Solo se permiten URLs de Fama ({', '.join(DOMINIOS_PERMITIDOS)}). Recibido: {host or url}"
         )
+    # Un presupuesto o pedido siempre tiene la forma  https://dominio/#/order/<código>
+    fragmento = urlparse(url).fragment or ""
+    if not fragmento.startswith("/order/") or len(fragmento) <= len("/order/"):
+        raise NoPresupuestoError("La URL no es la de un presupuesto o pedido")
 
 
 class NoPresupuestoError(Exception):
